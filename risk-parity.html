@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risk Parity Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:#080808;color:#eae8e2;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:1.7;overflow-x:hidden;}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.018) 2px,rgba(0,0,0,.018) 4px);pointer-events:none;z-index:9000;}
+
+header{padding:20px 40px;border-bottom:1px solid rgba(255,255,255,.07);background:rgba(8,8,8,.95);backdrop-filter:blur(16px);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.hdr-title{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:-.3px;}
+.hdr-title span{color:#42d9f5;}
+.hdr-sub{font-size:10px;color:#68675f;letter-spacing:.07em;margin-top:2px;}
+.hdr-badge{font-size:9px;padding:3px 10px;border:1px solid rgba(66,217,245,.3);color:#42d9f5;letter-spacing:.08em;}
+
+/* EXPLAINER BANNER */
+.explainer{padding:16px 40px;border-bottom:1px solid rgba(255,255,255,.07);background:#0a0a0a;display:flex;gap:32px;align-items:flex-start;}
+.ex-main{flex:1;}
+.ex-title{font-size:11px;color:#eae8e2;font-weight:500;margin-bottom:4px;}
+.ex-body{font-size:11px;color:#68675f;line-height:1.8;}
+.ex-body strong{color:#42d9f5;}
+.ex-formula{background:#161616;border:1px solid rgba(255,255,255,.07);padding:10px 14px;font-size:11px;color:#68675f;border-left:2px solid #42d9f5;margin-top:8px;}
+.ex-formula span{color:#42d9f5;}
+
+/* ASSET INPUT */
+.asset-section{padding:20px 40px;border-bottom:1px solid rgba(255,255,255,.07);background:#0f0f0f;}
+.sec-lbl{font-size:9px;color:#68675f;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:10px;}
+.sec-lbl::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.07);}
+.assets-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.06);margin-bottom:14px;}
+.asset-cell{background:#0f0f0f;padding:14px 16px;}
+.ac-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.ac-sym{font-family:'Syne',sans-serif;font-size:15px;font-weight:800;}
+.ac-rm{background:none;border:none;color:#68675f;cursor:pointer;font-size:14px;transition:color .2s;padding:0;}
+.ac-rm:hover{color:#f55f5f;}
+.ac-lbl{font-size:9px;color:#68675f;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px;}
+.ac-inp{background:#161616;border:1px solid rgba(255,255,255,.1);color:#eae8e2;font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 10px;width:100%;outline:none;transition:border-color .2s;margin-bottom:8px;}
+.ac-inp:focus{border-color:#42d9f5;}
+.ac-vol{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#42d9f5;margin-top:4px;}
+.ac-vol-lbl{font-size:9px;color:#68675f;}
+
+.add-row{display:flex;gap:8px;align-items:center;}
+.inp{background:#161616;border:1px solid rgba(255,255,255,.1);color:#eae8e2;font-family:'JetBrains Mono',monospace;font-size:12px;padding:8px 12px;outline:none;transition:border-color .2s;}
+.inp:focus{border-color:#42d9f5;}
+.inp::placeholder{color:#68675f;}
+.add-btn{background:none;border:1px solid rgba(255,255,255,.1);color:#68675f;font-family:'JetBrains Mono',monospace;font-size:11px;padding:8px 14px;cursor:pointer;transition:all .2s;}
+.add-btn:hover{border-color:#42d9f5;color:#42d9f5;}
+.calc-btn{background:#42d9f5;border:none;color:#080808;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;padding:8px 22px;cursor:pointer;letter-spacing:.06em;transition:opacity .2s;margin-left:auto;}
+.calc-btn:hover{opacity:.85;}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);margin:20px 40px 0;}
+.kpi{background:#0f0f0f;padding:16px 18px;}
+.kpi-lbl{font-size:9px;color:#68675f;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;}
+.kpi-val{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;line-height:1;margin-bottom:2px;}
+.kpi-sub{font-size:10px;color:#68675f;}
+
+/* CHARTS */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.07);margin:20px 40px 0;}
+.chart-box{background:#0f0f0f;padding:18px 20px;}
+.chart-lbl{font-size:9px;color:#68675f;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;}
+.chart-wrap{position:relative;width:100%;height:220px;}
+canvas{display:block;width:100%;height:100%;}
+
+/* COMPARISON TABLE */
+.compare-wrap{margin:20px 40px 40px;}
+.compare-table{width:100%;border-collapse:collapse;font-size:11px;}
+.compare-table th{text-align:left;padding:8px 14px;color:#68675f;font-size:9px;letter-spacing:.1em;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.07);font-weight:400;}
+.compare-table td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.04);}
+.compare-table tr:hover td{background:#0f0f0f;}
+.bar-cell{width:200px;}
+.bar-wrap{background:rgba(255,255,255,.06);height:6px;position:relative;}
+.bar-fill{height:100%;transition:width .6s ease;}
+
+@media(max-width:900px){
+  header,.explainer,.asset-section,.compare-wrap{padding-left:18px;padding-right:18px;}
+  .kpi-grid,.chart-grid{margin-left:0;margin-right:0;grid-template-columns:1fr 1fr;}
+  .assets-grid{grid-template-columns:1fr 1fr;}
+  .compare-wrap{margin-left:0;margin-right:0;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="hdr-title">Risk Parity <span>Portfolio</span></div>
+    <div class="hdr-sub">Balance volatility contribution equally across all assets</div>
+  </div>
+  <div class="hdr-badge">PORTFOLIO CONSTRUCTION</div>
+</header>
+
+<div class="explainer">
+  <div class="ex-main">
+    <div class="ex-title">What is Risk Parity?</div>
+    <div class="ex-body">A normal portfolio might put 60% in stocks and 40% in bonds by <strong>dollar value</strong>. But stocks are far more volatile — so the 60% in stocks contributes 90%+ of the total risk. <strong>Risk Parity</strong> flips this: instead of equal dollar weights, it allocates so that every asset contributes an <strong>equal share of the total portfolio volatility</strong>. Lower-volatility assets get higher weights. Higher-volatility assets get lower weights.</div>
+    <div class="ex-formula">
+      <span>Weight(i) = (1 / σ(i)) / Σ(1 / σ(j))</span> &nbsp;·&nbsp; where σ = annualised volatility of each asset
+    </div>
+  </div>
+  <div style="flex:1;min-width:200px;">
+    <div class="ex-title">Why it matters</div>
+    <div class="ex-body">Used by Ray Dalio's Bridgewater in the famous <strong>All Weather Portfolio</strong>. The idea: no single asset dominates the risk. During a crash, the low-volatility assets (bonds, gold) hold up the portfolio while equities fall. During a boom, equities lead. The result is a smoother ride with lower drawdowns.</div>
+  </div>
+</div>
+
+<div class="asset-section">
+  <div class="sec-lbl">Assets — enter expected annual return and annual volatility for each</div>
+  <div class="assets-grid" id="assets-grid"></div>
+  <div class="add-row">
+    <input class="inp" id="new-sym" placeholder="Ticker" style="width:100px" oninput="this.value=this.value.toUpperCase()">
+    <input class="inp" id="new-ret" placeholder="Exp. Return %" type="number" step="0.1" style="width:130px">
+    <input class="inp" id="new-vol" placeholder="Volatility %" type="number" step="0.1" style="width:130px">
+    <button class="add-btn" onclick="addAsset()">+ Add Asset</button>
+    <button class="calc-btn" onclick="calc()">Calculate Risk Parity →</button>
+  </div>
+</div>
+
+<div class="kpi-grid">
+  <div class="kpi"><div class="kpi-lbl">Portfolio Volatility</div><div class="kpi-val" id="k-vol" style="color:#42d9f5">—</div><div class="kpi-sub">annualised (risk parity)</div></div>
+  <div class="kpi"><div class="kpi-lbl">Expected Return</div><div class="kpi-val" id="k-ret" style="color:#b5f542">—</div><div class="kpi-sub">weighted average</div></div>
+  <div class="kpi"><div class="kpi-lbl">Sharpe Ratio</div><div class="kpi-val" id="k-sharpe">—</div><div class="kpi-sub">vs 4.3% risk-free rate</div></div>
+  <div class="kpi"><div class="kpi-lbl">Diversification</div><div class="kpi-val" id="k-div" style="color:#c084fc">—</div><div class="kpi-sub">equally weighted spread</div></div>
+  <div class="kpi"><div class="kpi-lbl">Highest Weight</div><div class="kpi-val" id="k-top">—</div><div class="kpi-sub">asset with most allocation</div></div>
+</div>
+
+<div class="chart-grid">
+  <div class="chart-box">
+    <div class="chart-lbl">Risk Parity Weights vs Equal Weights</div>
+    <div class="chart-wrap"><canvas id="c-weights"></canvas></div>
+  </div>
+  <div class="chart-box">
+    <div class="chart-lbl">Risk Contribution — each asset's share of total portfolio risk</div>
+    <div class="chart-wrap"><canvas id="c-risk"></canvas></div>
+  </div>
+</div>
+
+<div class="compare-wrap">
+  <div class="sec-lbl" style="margin-bottom:12px;">Asset breakdown — risk parity vs equal weight comparison</div>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Asset</th>
+        <th>Volatility (σ)</th>
+        <th>Exp. Return</th>
+        <th>Equal Weight</th>
+        <th>Risk Parity Weight</th>
+        <th>Weight Allocation</th>
+        <th>Risk Contribution</th>
+        <th>Return Contribution</th>
+      </tr>
+    </thead>
+    <tbody id="compare-body"></tbody>
+  </table>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const PALETTE=['#42d9f5','#b5f542','#f5a742','#c084fc','#f55f5f','#34d399','#f472b6','#60a5fa'];
+const RF=4.3;
+let charts={};
+
+const DEFAULT=[
+  {sym:'SPY', ret:10.5, vol:18.2},
+  {sym:'TLT', ret:3.8,  vol:12.4},
+  {sym:'GLD', ret:6.2,  vol:14.8},
+  {sym:'VNQ', ret:8.1,  vol:20.6},
+  {sym:'DBC', ret:5.4,  vol:16.3},
+];
+let assets=[...DEFAULT];
+
+function renderAssets(){
+  const grid=document.getElementById('assets-grid');
+  grid.innerHTML=assets.map((a,i)=>`
+    <div class="asset-cell">
+      <div class="ac-header">
+        <div class="ac-sym" style="color:${PALETTE[i%PALETTE.length]}">${a.sym}</div>
+        <button class="ac-rm" onclick="removeAsset(${i})">×</button>
+      </div>
+      <div class="ac-lbl">Expected Return %</div>
+      <input class="ac-inp" type="number" step="0.1" value="${a.ret}" onchange="assets[${i}].ret=parseFloat(this.value);calc()">
+      <div class="ac-lbl">Annual Volatility %</div>
+      <input class="ac-inp" type="number" step="0.1" value="${a.vol}" onchange="assets[${i}].vol=parseFloat(this.value);calc()">
+      <div class="ac-vol-lbl">Inv. Vol Weight</div>
+      <div class="ac-vol" id="wt-${i}">—</div>
+    </div>`).join('');
+}
+
+function addAsset(){
+  const sym=document.getElementById('new-sym').value.trim().toUpperCase();
+  const ret=parseFloat(document.getElementById('new-ret').value)||8;
+  const vol=parseFloat(document.getElementById('new-vol').value)||15;
+  if(!sym) return;
+  assets.push({sym,ret,vol});
+  document.getElementById('new-sym').value='';
+  document.getElementById('new-ret').value='';
+  document.getElementById('new-vol').value='';
+  renderAssets(); calc();
+}
+
+function removeAsset(i){ assets.splice(i,1); renderAssets(); calc(); }
+
+function calc(){
+  if(assets.length<2) return;
+  const n=assets.length;
+
+  // Inverse volatility weights
+  const invVols=assets.map(a=>1/a.vol);
+  const sumInv=invVols.reduce((a,b)=>a+b,0);
+  const weights=invVols.map(v=>v/sumInv);
+  const equalW=assets.map(()=>1/n);
+
+  // Portfolio metrics
+  const portVol=Math.sqrt(assets.reduce((sum,a,i)=>sum+Math.pow(weights[i]*a.vol/100,2),0))*100;
+  const portRet=assets.reduce((sum,a,i)=>sum+weights[i]*a.ret,0);
+  const sharpe=(portRet-RF)/portVol;
+
+  // Risk contributions (simplified diagonal — no correlation)
+  const riskContribs=assets.map((a,i)=>weights[i]*a.vol/100);
+  const totalRisk=riskContribs.reduce((a,b)=>a+b,0);
+  const riskPcts=riskContribs.map(r=>r/totalRisk*100);
+
+  // Update weight displays
+  weights.forEach((w,i)=>{
+    const el=document.getElementById('wt-'+i);
+    if(el) el.textContent=(w*100).toFixed(1)+'%';
+  });
+
+  // KPIs
+  document.getElementById('k-vol').textContent=portVol.toFixed(1)+'%';
+  document.getElementById('k-ret').textContent=portRet.toFixed(1)+'%';
+  const shEl=document.getElementById('k-sharpe');
+  shEl.textContent=sharpe.toFixed(2);
+  shEl.style.color=sharpe>1?'#b5f542':sharpe>0?'#f5a742':'#f55f5f';
+  // Diversification: how close to equal risk contributions
+  const idealShare=100/n;
+  const divScore=100-riskPcts.reduce((s,r)=>s+Math.abs(r-idealShare),0)/2;
+  document.getElementById('k-div').textContent=divScore.toFixed(0)+'%';
+  const topIdx=weights.indexOf(Math.max(...weights));
+  document.getElementById('k-top').textContent=assets[topIdx].sym+' '+(weights[topIdx]*100).toFixed(1)+'%';
+
+  // Charts
+  const FONT="'JetBrains Mono',monospace";
+  const labels=assets.map(a=>a.sym);
+
+  if(charts.weights) charts.weights.destroy();
+  charts.weights=new Chart(document.getElementById('c-weights'),{
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Risk Parity',data:weights.map(w=>parseFloat((w*100).toFixed(1))),backgroundColor:PALETTE.map(c=>c+'99'),borderColor:PALETTE,borderWidth:1.5},
+      {label:'Equal Weight',data:equalW.map(w=>parseFloat((w*100).toFixed(1))),backgroundColor:'rgba(255,255,255,.06)',borderColor:'rgba(255,255,255,.2)',borderWidth:1},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},
+      plugins:{legend:{display:true,labels:{color:'#68675f',font:{family:FONT,size:10},boxWidth:10,padding:12}},
+        tooltip:{backgroundColor:'#161616',titleFont:{family:FONT,size:11},bodyFont:{family:FONT,size:11},callbacks:{label:c=>c.dataset.label+': '+c.raw+'%'}}},
+      scales:{
+        x:{ticks:{color:'#68675f',font:{family:FONT,size:11}},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.08)'}},
+        y:{ticks:{color:'#68675f',font:{family:FONT,size:10},callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.04)'},border:{color:'rgba(255,255,255,.08)'},max:Math.ceil(Math.max(...weights)*110)}
+      }
+    }
+  });
+
+  if(charts.risk) charts.risk.destroy();
+  charts.risk=new Chart(document.getElementById('c-risk'),{
+    type:'doughnut',
+    data:{labels,datasets:[{
+      data:riskPcts.map(r=>parseFloat(r.toFixed(1))),
+      backgroundColor:PALETTE.map(c=>c+'cc'),
+      borderColor:PALETTE,
+      borderWidth:1.5,
+      hoverOffset:8,
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:500},
+      cutout:'58%',
+      plugins:{
+        legend:{display:true,position:'right',labels:{color:'#68675f',font:{family:FONT,size:10},boxWidth:10,padding:10}},
+        tooltip:{backgroundColor:'#161616',titleFont:{family:FONT,size:11},bodyFont:{family:FONT,size:11},callbacks:{label:c=>c.label+': '+c.raw+'% of risk'}}
+      }
+    }
+  });
+
+  // Comparison table
+  const tbody=document.getElementById('compare-body');
+  tbody.innerHTML=assets.map((a,i)=>`
+    <tr>
+      <td style="color:${PALETTE[i%PALETTE.length]};font-weight:700">${a.sym}</td>
+      <td style="color:#42d9f5">${a.vol.toFixed(1)}%</td>
+      <td style="color:#b5f542">+${a.ret.toFixed(1)}%</td>
+      <td style="color:#68675f">${(100/n).toFixed(1)}%</td>
+      <td style="font-weight:700">${(weights[i]*100).toFixed(1)}%</td>
+      <td class="bar-cell">
+        <div class="bar-wrap">
+          <div class="bar-fill" style="width:${(weights[i]*100).toFixed(1)}%;background:${PALETTE[i%PALETTE.length]}88;max-width:100%"></div>
+        </div>
+      </td>
+      <td style="color:#68675f">${riskPcts[i].toFixed(1)}%</td>
+      <td style="color:#b5f542">+${(weights[i]*a.ret).toFixed(2)}%</td>
+    </tr>`).join('');
+}
+
+renderAssets();
+calc();
+</script>
+</body>
+</html>
